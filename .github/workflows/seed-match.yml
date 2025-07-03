@@ -1,0 +1,46 @@
+name: Seed Match Certificates
+
+on:
+  workflow_dispatch: {}
+
+jobs:
+  seed_match:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          persist-credentials: true
+
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: 3.1.7
+          bundler-cache: true
+
+      - run: bundle install --jobs 4 --retry 3
+
+      - name: Write API Key
+        run: |
+          echo "${{ secrets.APPSTORE_API_KEY }}" | base64 --decode \
+            > AuthKey_${{ secrets.APPSTORE_KEY_ID }}.p8
+
+      - name: Nuke old App Store certs
+        run: |
+          bundle exec fastlane match nuke appstore \
+            --api_key_path AuthKey_${{ secrets.APPSTORE_KEY_ID }}.p8 \
+            --api_key_id ${{ secrets.APPSTORE_KEY_ID }} \
+            --api_issuer_id ${{ secrets.APPSTORE_ISSUER_ID }}
+
+      - name: Create new App Store certs
+        run: |
+          bundle exec fastlane match appstore \
+            --api_key_path AuthKey_${{ secrets.APPSTORE_KEY_ID }}.p8 \
+            --api_key_id ${{ secrets.APPSTORE_KEY_ID }} \
+            --api_issuer_id ${{ secrets.APPSTORE_ISSUER_ID }}
+
+      - name: Commit & Push
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add .
+          git commit -m "ci: seed match certificates & profiles" || echo "Nothing to commit"
+          git push
