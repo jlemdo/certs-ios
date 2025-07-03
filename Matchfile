@@ -1,0 +1,19 @@
+git_url("https://github.com/jlemdo/certs-ios.git")
+
+storage_mode("git")
+
+type("appstore") # The default type, can be: appstore, adhoc, enterprise or development
+
+# Tu App Identifier:
+app_identifier("com.occr.productos")
+
+# Tu Apple Team ID (número que ves en App Store Connect):
+team_id("A46VG5KH6R")
+
+# app_identifier(["tools.fastlane.app", "tools.fastlane.app2"])
+# username("user@fastlane.tools") # Your Apple Developer Portal username
+
+# For all available options run `fastlane match --help`
+# Remove the # in the beginning of the line to enable the other options
+
+# The docs are available on https://docs.fastlane.tools/actions/match
