@@ -24,23 +24,17 @@ jobs:
             > AuthKey_${{ secrets.APPSTORE_KEY_ID }}.p8
 
       - name: Nuke old App Store certs
+        env:
+          APP_STORE_CONNECT_API_KEY_PATH: AuthKey_${{ secrets.APPSTORE_KEY_ID }}.p8
+          APP_STORE_CONNECT_API_KEY_ID:   ${{ secrets.APPSTORE_KEY_ID }}
+          APP_STORE_CONNECT_ISSUER_ID:    ${{ secrets.APPSTORE_ISSUER_ID }}
         run: |
-          bundle exec fastlane match nuke appstore \
-            --api_key_path AuthKey_${{ secrets.APPSTORE_KEY_ID }}.p8 \
-            --api_key_id ${{ secrets.APPSTORE_KEY_ID }} \
-            --api_issuer_id ${{ secrets.APPSTORE_ISSUER_ID }}
+          bundle exec fastlane match nuke appstore
 
-      - name: Create new App Store certs
+      - name: Create AppStore cert & profile
+        env:
+          APP_STORE_CONNECT_API_KEY_PATH: AuthKey_${{ secrets.APPSTORE_KEY_ID }}.p8
+          APP_STORE_CONNECT_API_KEY_ID:   ${{ secrets.APPSTORE_KEY_ID }}
+          APP_STORE_CONNECT_ISSUER_ID:    ${{ secrets.APPSTORE_ISSUER_ID }}
         run: |
-          bundle exec fastlane match appstore \
-            --api_key_path AuthKey_${{ secrets.APPSTORE_KEY_ID }}.p8 \
-            --api_key_id ${{ secrets.APPSTORE_KEY_ID }} \
-            --api_issuer_id ${{ secrets.APPSTORE_ISSUER_ID }}
-
-      - name: Commit & Push
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add .
-          git commit -m "ci: seed match certificates & profiles" || echo "Nothing to commit"
-          git push
+          bundle exec fastlane match appstore
