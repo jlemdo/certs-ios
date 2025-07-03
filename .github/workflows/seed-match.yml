@@ -1,40 +1,48 @@
 name: Seed Match Certificates
 
 on:
-  workflow_dispatch: {}
+  workflow_dispatch:
 
 jobs:
-  seed_match:
+  seed:
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v3
-        with:
-          persist-credentials: true
 
-      - uses: ruby/setup-ruby@v1
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@v1
         with:
           ruby-version: 3.1.7
-          bundler-cache: true
 
-      - run: bundle install --jobs 4 --retry 3
+      - name: Install fastlane
+        run: gem install fastlane --no-document
 
-      - name: Write API Key
-        run: |
-          echo "${{ secrets.APPSTORE_API_KEY }}" | base64 --decode \
-            > AuthKey_${{ secrets.APPSTORE_KEY_ID }}.p8
-
-      - name: Nuke old App Store certs
+      - name: Decode AuthKey.p8 into ENV
+        run: echo "$APPSTORE_API_KEY" > AuthKey_$APPSTORE_KEY_ID.p8
         env:
-          APP_STORE_CONNECT_API_KEY_PATH: AuthKey_${{ secrets.APPSTORE_KEY_ID }}.p8
-          APP_STORE_CONNECT_API_KEY_ID:   ${{ secrets.APPSTORE_KEY_ID }}
-          APP_STORE_CONNECT_ISSUER_ID:    ${{ secrets.APPSTORE_ISSUER_ID }}
+          APPSTORE_API_KEY:    ${{ secrets.APPSTORE_API_KEY }}
+          APPSTORE_KEY_ID:     ${{ secrets.APPSTORE_KEY_ID }}
+
+      - name: 🚮 Nuke old distribution certs
+        env:
+          APP_STORE_CONNECT_API_KEY_KEY: ${{ secrets.APPSTORE_API_KEY }}
+          APP_STORE_CONNECT_API_KEY_ID:  ${{ secrets.APPSTORE_KEY_ID }}
+          APP_STORE_CONNECT_ISSUER_ID:   ${{ secrets.APPSTORE_ISSUER_ID }}
         run: |
           bundle exec fastlane match nuke distribution
 
-      - name: Create AppStore cert & profile
+      - name: 🆕 Create new App Store cert & profile
         env:
-          APP_STORE_CONNECT_API_KEY_PATH: AuthKey_${{ secrets.APPSTORE_KEY_ID }}.p8
-          APP_STORE_CONNECT_API_KEY_ID:   ${{ secrets.APPSTORE_KEY_ID }}
-          APP_STORE_CONNECT_ISSUER_ID:    ${{ secrets.APPSTORE_ISSUER_ID }}
+          APP_STORE_CONNECT_API_KEY_KEY: ${{ secrets.APPSTORE_API_KEY }}
+          APP_STORE_CONNECT_API_KEY_ID:  ${{ secrets.APPSTORE_KEY_ID }}
+          APP_STORE_CONNECT_ISSUER_ID:   ${{ secrets.APPSTORE_ISSUER_ID }}
         run: |
           bundle exec fastlane match appstore
+
+      - name: Push new certs to Git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add certs/*.gpg
+          git commit -m "chore: seed match certs"
+          git push
